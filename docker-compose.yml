@@ -1,0 +1,55 @@
+version: '3'
+services:
+  db:
+    image: mysql:5.7.19
+    env_file: .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+  front:
+    build: ./front
+    privileged: true
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./front/src/app:/var/www/html/front:z
+  api:
+    build: ./api
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./api/src/app:/var/www/html/api
+  admin:
+    build: ./admin
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./admin/src/app:/var/www/html/admin
+  nuxt:
+    build: ./nuxt
+    command: npm run dev 
+    privileged: true
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./nuxt/src/app:/home/app/nuxt
+      - /home/app/nuxt/node_modules
+  web:
+    image: nginx:1.13.5-alpine
+    ports:
+      - "80:80"
+    depends_on:
+      - front
+      - api
+      - admin
+    volumes:
+      - ./web:/etc/nginx/conf.d
+      - ./front/src/app:/var/www/html/front
+      - ./api/src/app:/var/www/html/api
+      - ./admin/src/app:/var/www/html/admin
+volumes:
+    db-data:
